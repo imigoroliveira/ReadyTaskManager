@@ -6,22 +6,25 @@ import Header from "./components/Header";
 import HeroCard from "./components/HeroCard";
 import SideMenu from "./components/SideMenu";
 import TaskCard from "./components/TaskCard";
-import TaskModal from "./components/TaskModal";
+import TaskModal from "./task/view";
 
 export default function Home() {
   const router = useRouter();
   const { tasks, loading, error, createTask, updateTask } = useTasks();
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
-  function openCreateModal() {
-    setActiveTask(null);
-    setModalOpen(true);
+  function openTask(task: Task) {
+    router.push({
+      pathname: "/task/view",
+      params: { id: task.id },
+    });
   }
 
-  function openEditModal(task: Task) {
-    setActiveTask(task);
+  function openCreate() {
+    setActiveTask(null);
     setModalOpen(true);
   }
 
@@ -32,8 +35,8 @@ export default function Home() {
       } else {
         await createTask(taskData);
       }
-    } catch (err) {
-      alert("Erro ao salvar tarefa. Tente novamente.");
+    } catch {
+      alert("Erro ao salvar tarefa");
     }
   }
 
@@ -43,20 +46,17 @@ export default function Home() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text>Carregando tarefas...</Text>
+      <View style={styles.center}>
+        <Text>Carregando...</Text>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Erro: {error}</Text>
-        <Button
-          title="Tentar novamente"
-          onPress={() => window.location.reload()}
-        />
+      <View style={styles.center}>
+        <Text>Erro: {error}</Text>
+        <Button title="Recarregar" onPress={() => window.location.reload()} />
       </View>
     );
   }
@@ -66,13 +66,7 @@ export default function Home() {
       <SideMenu
         visible={menuOpen}
         onClose={() => setMenuOpen(false)}
-        onNavigate={(path) => {
-          if (path === "/login") {
-            router.replace(path);
-          } else {
-            router.push(path);
-          }
-        }}
+        onNavigate={(path) => router.push(path)}
       />
 
       <Header
@@ -83,61 +77,32 @@ export default function Home() {
       <ScrollView contentContainerStyle={styles.container}>
         <HeroCard />
 
-        <Button title="Nova tarefa" onPress={openCreateModal} />
+        <Button title="Nova tarefa" onPress={openCreate} />
 
-        <Text style={styles.sectionTitle}>Tarefas</Text>
+        <Text style={styles.title}>Tarefas</Text>
+
         {tasks.length === 0 ? (
-          <Text style={styles.emptyText}>Nenhuma tarefa cadastrada.</Text>
+          <Text>Nenhuma tarefa</Text>
         ) : (
           tasks.map((task) => (
-            <TaskCard key={task.id} task={task} onPress={openEditModal} />
+            <TaskCard key={task.id} task={task} onPress={openTask} />
           ))
         )}
       </ScrollView>
 
       <TaskModal
         visible={modalOpen}
+        task={activeTask}
         onClose={() => setModalOpen(false)}
         onSave={handleSaveTask}
-        editingTask={activeTask}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: "#f6f7fb",
-  },
-  container: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginVertical: 16,
-  },
-  emptyText: {
-    color: "#6b7280",
-    fontSize: 14,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  errorText: {
-    color: "#ef4444",
-    fontSize: 16,
-    marginBottom: 20,
-    textAlign: "center",
-  },
+  root: { flex: 1, backgroundColor: "#f6f7fb" },
+  container: { padding: 20, paddingBottom: 40 },
+  title: { fontSize: 18, fontWeight: "700", marginVertical: 16 },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
 });
